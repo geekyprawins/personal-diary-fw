@@ -103,6 +103,7 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       body: Row(
+        mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
             flex: 1,
@@ -117,31 +118,39 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
               ),
-              child: ListView(
-                // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                // crossAxisAlignment: CrossAxisAlignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SfDateRangePicker(
                     onSelectionChanged: (daterangepickerSelection) {
                       // TODO: add functionality
                     },
                   ),
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.add,
-                      color: Colors.greenAccent,
-                      size: 40,
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.2,
+                    decoration: BoxDecoration(
+                      color: Colors.black12.withOpacity(0.1),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    label: const Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Write New',
-                          style: TextStyle(fontSize: 17),
-                        ),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        // add functionality
+                      },
+                      icon: const Icon(
+                        Icons.add,
+                        color: Colors.green,
+                        // size: 40,
+                      ),
+                      label: const Text(
+                        'Write New',
+                        // style: TextStyle(fontSize: 17),
                       ),
                     ),
+                  ),
+                  const SizedBox(
+                    height: 60,
                   ),
                 ],
               ),
@@ -170,7 +179,9 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          // add functionality
+        },
         tooltip: "Add",
         child: const Icon(
           Icons.add,
