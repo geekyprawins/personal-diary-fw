@@ -1,4 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_diary/models/diary_user.dart';
+import 'package:personal_diary/widgets/build_profile.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
 class MainPage extends StatefulWidget {
@@ -10,6 +14,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String? _dropdownText;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,38 +71,25 @@ class _MainPageState extends State<MainPage> {
                   },
                 ),
               ),
-              Row(
-                children: [
-                  Column(
-                    children: const [
-                      Expanded(
-                        child: InkWell(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircleAvatar(
-                              radius: 30,
-                              backgroundImage:
-                                  NetworkImage("https://picsum.photos/200/300"),
-                              backgroundColor: Colors.transparent,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        "Praveen",
-                        style: TextStyle(color: Colors.grey),
-                      )
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.login,
-                      color: Colors.red,
-                    ),
-                  )
-                ],
-              )
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+                  final usersListStream = snapshot.data!.docs.map((docs) {
+                    return DiaryUser.fromDoc(docs);
+                  }).where((element) {
+                    return (element.uid ==
+                        FirebaseAuth.instance.currentUser!.uid);
+                  }).toList();
+
+                  DiaryUser currUser = usersListStream[0];
+
+                  return buildProfile(currUser, context);
+                },
+                stream:
+                    FirebaseFirestore.instance.collection('users').snapshots(),
+              ),
             ],
           ),
         ],

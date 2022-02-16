@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_diary/screens/main_page.dart';
+import 'package:personal_diary/services/services.dart';
 import 'input_decoration.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -81,18 +83,23 @@ class CreateAccountForm extends StatelessWidget {
                         password: _passwdController.text)
                     .then((value) {
                   // create custom user
-
-                  Map<String, dynamic> user = {
-                    'avatar_url': "https://google.com",
-                    'profession': "Doctor",
-                    'uid': value.user!.uid,
-                    'display_name': email.split('@')[0],
-                  };
-
-                  FirebaseFirestore.instance
-                      .collection("users")
-                      .add(user)
-                      .then((value) => print(value.path));
+                  if (value.user != null) {
+                    DiaryService()
+                        .createUser(
+                            email.split('@')[0], value.user!.uid, context)
+                        .then((value) {
+                      DiaryService()
+                          .loginUser(email, _passwdController.text)
+                          .then((value) {
+                        return Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MainPage(),
+                          ),
+                        );
+                      });
+                    });
+                  }
                 });
               }
             },
