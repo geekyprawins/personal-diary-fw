@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:personal_diary/models/diary_user.dart';
 import 'package:personal_diary/widgets/build_profile.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:personal_diary/widgets/write_diary_dialog.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -14,7 +15,8 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String? _dropdownText;
-
+  final titleCtrl = TextEditingController();
+  final descCtrl = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,9 +129,6 @@ class _MainPageState extends State<MainPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextButton.icon(
-                      onPressed: () {
-                        // add functionality
-                      },
                       icon: const Icon(
                         Icons.add,
                         color: Colors.green,
@@ -139,6 +138,19 @@ class _MainPageState extends State<MainPage> {
                         'Write New',
                         // style: TextStyle(fontSize: 17),
                       ),
+                      onPressed: () {
+                        // add functionality
+                        // print("clicked");
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return WriteDiaryDialog(
+                                titleCtrl: titleCtrl,
+                                descCtrl: descCtrl,
+                              );
+                            });
+                        // print("shown");
+                      },
                     ),
                   ),
                   const SizedBox(

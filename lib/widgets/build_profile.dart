@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:personal_diary/models/diary_user.dart';
 import 'package:personal_diary/screens/login_page.dart';
-import 'package:personal_diary/widgets/update_user_dialogue.dart';
+import 'package:personal_diary/widgets/update_user_dialog.dart';
 
 Row buildProfile(DiaryUser currUser, BuildContext context) {
   final avatarUrlCtrl = TextEditingController(text: currUser.avatarUrl);
