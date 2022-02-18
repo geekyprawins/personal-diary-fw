@@ -44,7 +44,7 @@ class GettingStartedPage extends StatelessWidget {
                       Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
                 icon: const Icon(Icons.login_rounded),
-                label: const Text("Sign in to get started"),
+                label: const Text("Get started!"),
                 onPressed: () {
                   Navigator.push(
                     context,
