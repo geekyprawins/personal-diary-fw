@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_diary/models/diary.dart';
 import 'package:personal_diary/models/diary_user.dart';
 import 'package:personal_diary/widgets/build_profile.dart';
+import 'package:personal_diary/widgets/diaries_list_view.dart';
+import 'package:personal_diary/widgets/user_profile.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:personal_diary/widgets/write_diary_dialog.dart';
 
@@ -17,6 +20,7 @@ class _MainPageState extends State<MainPage> {
   String? _dropdownText;
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
+  var selectedDate = DateTime.now();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,25 +77,7 @@ class _MainPageState extends State<MainPage> {
                   },
                 ),
               ),
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  }
-                  final usersListStream = snapshot.data!.docs.map((docs) {
-                    return DiaryUser.fromDoc(docs);
-                  }).where((element) {
-                    return (element.uid ==
-                        FirebaseAuth.instance.currentUser!.uid);
-                  }).toList();
-
-                  DiaryUser currUser = usersListStream[0];
-
-                  return buildProfile(currUser, context);
-                },
-                stream:
-                    FirebaseFirestore.instance.collection('users').snapshots(),
-              ),
+              const UserProfile(),
             ],
           ),
         ],
@@ -100,7 +86,7 @@ class _MainPageState extends State<MainPage> {
         mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
-            flex: 1,
+            flex: 4,
             child: Container(
               height: MediaQuery.of(context).size.height,
               decoration: const BoxDecoration(
@@ -118,7 +104,9 @@ class _MainPageState extends State<MainPage> {
                 children: [
                   SfDateRangePicker(
                     onSelectionChanged: (daterangepickerSelection) {
-                      // TODO: add functionality
+                      setState(() {
+                        selectedDate = daterangepickerSelection.value;
+                      });
                     },
                   ),
                   Container(
@@ -145,6 +133,7 @@ class _MainPageState extends State<MainPage> {
                             context: context,
                             builder: (context) {
                               return WriteDiaryDialog(
+                                selectedDate: selectedDate,
                                 titleCtrl: titleCtrl,
                                 descCtrl: descCtrl,
                               );
@@ -160,25 +149,9 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Container(
-              color: Colors.white,
-              child: ListView.builder(
-                itemBuilder: (ctx, index) {
-                  return SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.4,
-                    child: Card(
-                      elevation: 4,
-                      child: ListTile(
-                        title: Text("Hello, $index"),
-                      ),
-                    ),
-                  );
-                },
-                itemCount: 5,
-              ),
-            ),
+          const Expanded(
+            flex: 10,
+            child: DiariesListView(),
           ),
         ],
       ),

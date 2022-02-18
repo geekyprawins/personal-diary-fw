@@ -56,7 +56,7 @@ Row buildProfile(DiaryUser currUser, BuildContext context) {
           Icons.logout,
           color: Colors.red,
         ),
-      )
+      ),
     ],
   );
 }
