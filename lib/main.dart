@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_diary/models/diary.dart';
 import 'package:personal_diary/screens/main_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:personal_diary/screens/getting_started_page.dart';
 
@@ -10,23 +13,39 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  MyApp({Key? key}) : super(key: key);
 
   // This widget is the root of your application.
+  final userDiaryDataStream =
+      FirebaseFirestore.instance.collection('diaries').snapshots().map((diary) {
+    return diary.docs.map((e) {
+      return Diary.fromDoc(e);
+    }).toList();
+  });
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Diary Book',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MultiProvider(
+      providers: [
+        StreamProvider<List<Diary>>(
+            create: (context) => userDiaryDataStream, initialData: []),
+        StreamProvider<User?>(
+            create: (context) => FirebaseAuth.instance.authStateChanges(),
+            initialData: null),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Diary Book',
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const GettingStartedPage(),
+        initialRoute: ,
       ),
-      home: const GettingStartedPage(),
     );
   }
 }

@@ -1,6 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:personal_diary/models/diary.dart';
+import 'package:personal_diary/services/services.dart';
 import 'package:personal_diary/widgets/diaries_list_view.dart';
 import 'package:personal_diary/widgets/user_profile.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:personal_diary/widgets/write_diary_dialog.dart';
 
@@ -16,8 +21,16 @@ class _MainPageState extends State<MainPage> {
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   var selectedDate = DateTime.now();
+  var sameDateDiaries;
+
+  // List<Diary> listOfDiaries = [];
   @override
   Widget build(BuildContext context) {
+    var listOfDiaries = Provider.of<List<Diary>>(context);
+    var _user = Provider.of<User?>(context);
+    var latestFilteredStream;
+    var earliestFilteredStream;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.grey.shade100,
@@ -66,8 +79,30 @@ class _MainPageState extends State<MainPage> {
                       setState(() {
                         _dropdownText = value as String?;
                       });
+                      listOfDiaries.clear();
+                      latestFilteredStream = DiaryService()
+                          .getLatestDiaries(_user!.uid)
+                          .then((value) {
+                        for (var i in value) {
+                          setState(() {
+                            listOfDiaries.add(i);
+                          });
+                        }
+                      });
                     } else if (value == "Earliest") {
-                      _dropdownText = value as String?;
+                      setState(() {
+                        _dropdownText = value as String?;
+                      });
+                      listOfDiaries.clear();
+                      earliestFilteredStream = DiaryService()
+                          .getEarliestDiaries(_user!.uid)
+                          .then((value) {
+                        for (var i in value) {
+                          setState(() {
+                            listOfDiaries.add(i);
+                          });
+                        }
+                      });
                     }
                   },
                 ),
@@ -101,6 +136,19 @@ class _MainPageState extends State<MainPage> {
                     onSelectionChanged: (daterangepickerSelection) {
                       setState(() {
                         selectedDate = daterangepickerSelection.value;
+                        listOfDiaries.clear();
+                        sameDateDiaries = DiaryService()
+                            .getSameDateDiaries(
+                          Timestamp.fromDate(selectedDate).toDate(),
+                          FirebaseAuth.instance.currentUser!.uid,
+                        )
+                            .then((value) {
+                          for (var item in value) {
+                            setState(() {
+                              listOfDiaries.add(item);
+                            });
+                          }
+                        });
                       });
                     },
                   ),
@@ -147,6 +195,7 @@ class _MainPageState extends State<MainPage> {
           Expanded(
             flex: 10,
             child: DiariesListView(
+              listOfDiaries: listOfDiaries,
               selectedDate: selectedDate,
             ),
           ),
@@ -155,6 +204,15 @@ class _MainPageState extends State<MainPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // add functionality
+          showDialog(
+              context: context,
+              builder: (context) {
+                return WriteDiaryDialog(
+                  selectedDate: selectedDate,
+                  titleCtrl: titleCtrl,
+                  descCtrl: descCtrl,
+                );
+              });
         },
         tooltip: "Add",
         child: const Icon(
