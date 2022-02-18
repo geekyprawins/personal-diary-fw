@@ -2,45 +2,50 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker_web/image_picker_web.dart';
-import 'package:mime_type/mime_type.dart';
 import 'package:personal_diary/models/diary.dart';
 import 'package:personal_diary/utils/utils.dart';
 import 'dart:html' as html;
 import 'package:path/path.dart' as Path;
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:personal_diary/widgets/delete_entry_dialog.dart';
 
-class WriteDiaryDialog extends StatefulWidget {
-  const WriteDiaryDialog({
-    Key? key,
-    required this.titleCtrl,
-    required this.descCtrl,
-    this.selectedDate,
-  }) : super(key: key);
-
-  final TextEditingController titleCtrl;
-  final TextEditingController descCtrl;
+class UpdateEntryDialog extends StatefulWidget {
+  final Diary? diary;
   final DateTime? selectedDate;
 
+  UpdateEntryDialog({this.diary, this.selectedDate});
+
   @override
-  State<WriteDiaryDialog> createState() => _WriteDiaryDialogState();
+  State<UpdateEntryDialog> createState() => _UpdateEntryDialogState();
 }
 
-class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
-  var buttonText = "Done";
-  final CollectionReference diaries =
-      FirebaseFirestore.instance.collection('diaries');
-
+class _UpdateEntryDialogState extends State<UpdateEntryDialog> {
   html.File? _cloudFile;
   var _fileBytes;
   Image? _imageWidget;
   String? currId;
+  var buttonText = "Done";
+
+  final diaries = FirebaseFirestore.instance.collection('diaries');
+  late final TextEditingController titleCtrl;
+  late final TextEditingController descCtrl;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    titleCtrl = TextEditingController(text: widget.diary!.title);
+    descCtrl = TextEditingController(text: widget.diary!.entry);
+  }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      content: SizedBox(
+      elevation: 5,
+      content: Container(
         width: MediaQuery.of(context).size.width,
         child: Column(
+          mainAxisSize: MainAxisSize.max,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -63,35 +68,31 @@ class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
                   padding: const EdgeInsets.all(8.0),
                   child: TextButton(
                     onPressed: () {
+                      // update records
                       firebase_storage.FirebaseStorage firebaseStorage =
                           firebase_storage.FirebaseStorage.instance;
                       final date = DateTime.now();
                       final path = '$date';
                       final isFieldsNotEmpty =
-                          widget.titleCtrl.text.isNotEmpty &&
-                              widget.descCtrl.text.isNotEmpty;
+                          titleCtrl.text.isNotEmpty && descCtrl.text.isNotEmpty;
 
                       if (isFieldsNotEmpty) {
                         setState(() {
-                          buttonText = "Saving...";
+                          buttonText = "Updating...";
                         });
-                        // save to firestore
+                        // update to firestore
+
                         diaries
-                            .add(
-                          Diary(
-                            userId: FirebaseAuth.instance.currentUser!.uid,
-                            title: widget.titleCtrl.text,
-                            author: FirebaseAuth.instance.currentUser!.email!
-                                .split('@')[0],
-                            entry: widget.descCtrl.text,
-                            entryPoint:
-                                Timestamp.fromDate(widget.selectedDate!),
-                          ).toMap(),
-                        )
+                            .doc(widget.diary!.id)
+                            .update(Diary(
+                              userId: FirebaseAuth.instance.currentUser!.uid,
+                              title: titleCtrl.text,
+                              author: FirebaseAuth.instance.currentUser!.email!
+                                  .split('@')[0],
+                              entry: descCtrl.text,
+                              entryPoint: Timestamp.fromDate(DateTime.now()),
+                            ).toMap())
                             .then((value) {
-                          setState(() {
-                            currId = value.id;
-                          });
                           Future.delayed(const Duration(seconds: 2))
                               .then((value) {
                             Navigator.of(context).pop();
@@ -119,7 +120,7 @@ class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
                               .then((val) {
                             return val.ref.getDownloadURL().then((value) {
                               diaries
-                                  .doc(currId)
+                                  .doc(widget.diary!.id)
                                   .update({'photo_list': value.toString()});
                             });
                           });
@@ -153,21 +154,41 @@ class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
             Expanded(
               flex: 1,
               child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     height: MediaQuery.of(context).size.height,
                     color: Colors.white12,
                     child: Column(
                       children: [
-                        IconButton(
-                          onPressed: () async {
-                            // add picture
-                            await getMultipleImageInfos();
-                          },
-                          icon: const Icon(
-                            Icons.image_rounded,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () async {
+                              // action
+                              await getMultipleImageInfos();
+                            },
+                            icon: const Icon(Icons.image_rounded),
+                            splashRadius: 26,
                           ),
-                          splashRadius: 26,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return DeleteEntryDialog(
+                                      diaries: diaries, diary: widget.diary!);
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            splashRadius: 26,
+                            color: Colors.red,
+                          ),
                         ),
                       ],
                     ),
@@ -176,31 +197,42 @@ class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
                     width: 50,
                   ),
                   Expanded(
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        //add
                         Text(
-                          formatDate(widget.selectedDate!),
+                          formatDateFromTimestamp(widget.diary!.entryPoint),
                         ),
                         SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.5,
+                          width: MediaQuery.of(context).size.width * 0.60,
+                          height: MediaQuery.of(context).size.height * 0.40,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: (_imageWidget != null)
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: _imageWidget,
+                                  )
+                                : Image.network(widget.diary!.photoUrls == null
+                                    ? 'https://picsum.photos/400/200'
+                                    : widget.diary!.photoUrls!),
+                          ),
+                        ),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.50,
                           child: Form(
                             child: Column(
                               children: [
-                                SizedBox(
-                                  height: (MediaQuery.of(context).size.height *
-                                          0.8) /
-                                      2,
-                                  child: _imageWidget,
-                                ),
                                 TextFormField(
-                                  controller: widget.titleCtrl,
+                                  controller: titleCtrl,
                                   decoration: const InputDecoration(
                                       hintText: "Title...."),
                                 ),
                                 TextFormField(
                                   maxLines: null,
-                                  controller: widget.descCtrl,
+                                  controller: descCtrl,
                                   decoration: const InputDecoration(
                                       hintText: "Write your thoughts...."),
                                 ),
@@ -210,10 +242,10 @@ class _WriteDiaryDialogState extends State<WriteDiaryDialog> {
                         )
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

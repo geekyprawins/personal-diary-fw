@@ -1,9 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:personal_diary/models/diary.dart';
-import 'package:personal_diary/models/diary_user.dart';
-import 'package:personal_diary/widgets/build_profile.dart';
 import 'package:personal_diary/widgets/diaries_list_view.dart';
 import 'package:personal_diary/widgets/user_profile.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
@@ -149,9 +144,11 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             flex: 10,
-            child: DiariesListView(),
+            child: DiariesListView(
+              selectedDate: selectedDate,
+            ),
           ),
         ],
       ),
